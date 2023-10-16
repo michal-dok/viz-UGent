@@ -9,7 +9,7 @@ def unpickle(file):
     return dict
 
 
-dataset_path = "./cifar-10-python.tar.gz"
+dataset_path = "./data/cifar-10-python.tar.gz"
 
-data1 = unpickle("data_batch_1")
+data1 = unpickle("./data/data_batch_1")
 print(data1)
