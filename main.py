@@ -1,42 +1,50 @@
-from sklearn.decomposition import PCA
-import plotly
-import numpy as np
-import matplotlib.pyplot as plt
 
 
-def unpickle(file):
-    """load dataset"""
-    import pickle
-    with open(file, 'rb') as fo:
-        dict = pickle.load(fo, encoding='bytes')
-    return dict
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
+from dash.dependencies import Input, Output
+from functions import *
+import plotly.express as px
+
+app = dash.Dash(__name__)
+
+app.layout = html.Div([
+    html.H1("Simple Dash App with Scatter Plot"),
+    dcc.Input(id='input', type='text', value=''),
+    dcc.Graph(id='scatter-plot')
+])
+
+@app.callback(
+    Output('scatter-plot', 'figure'),
+    [Input('input', 'value')]
+)
+def update_scatter_plot(input_value):
+    # Sample scatter plot with random data
+    x, y, labels = init_data()
+    fig = px.scatter(x=x, y=y, color=labels)
+    return fig
+
+def init_data():
+    dataset_path = "./data/cifar-10-python.tar.gz"
+    data1 = unpickle("./data/data_batch_1")
+    images = data1[b'data']
+    labels = data1[b'labels']
+    red = reduce_dim(images)
+    images = data1[b'data'][:100]
+    labels = data1[b'labels'][:100]
+    labels = [str(l) for l in labels]
+
+    coordinates = reduce_dim(images)
+    x = coordinates[:,0]
+    y = coordinates[:,1]
+    return x, y, labels
+    
+
+#coordinates_array=np.array([coordinates])
 
 
-def row2array(row):
-    """transforms one row of a dataset into an array W * H * 3 array (so that it can be visualised using plt.imshow)"""
-    r, g, b = np.array_split(row, 3)    
-    r_mat = r.reshape((32, 32))
-    g_mat = g.reshape((32, 32))
-    b_mat = b.reshape((32, 32))
-    arr = np.dstack([r_mat, g_mat, b_mat])
-    return arr
 
 
-def reduce_dim(dataset, components=2):
-    """takes array of images (one row one image) and returns reduced dataset"""
-    model = PCA(n_components=components)
-    reduced = model.fit_transform(dataset)
-    return reduced
-
-
-dataset_path = "./data/cifar-10-python.tar.gz"
-
-data1 = unpickle("./data/data_batch_1")
-
-images = data1[b'data']
-labels = data1[b'labels']
-
-if __name__ == "__main__":
-    a = images[11]
-    arr = row2array(a)
-    plt.imshow(arr)
+if __name__ == '__main__':
+    app.run_server(debug=True)
