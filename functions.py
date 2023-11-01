@@ -21,6 +21,11 @@ def row2array(row):
     arr = np.dstack([r_mat, g_mat, b_mat])
     return arr
 
+def row2array_gray(row):
+    gray = row.reshape((32, 32))
+    arr = gray
+    return arr
+
 
 def reduce_dim(dataset, components=2):
     """takes array of images (one row one image) and returns reduced dataset"""
