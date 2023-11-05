@@ -96,8 +96,9 @@ rgb_images_resh = rgb_images.reshape(-1, H, W, 3)
 grayscale_images = np.mean(rgb_images_resh, axis=-1).astype(np.uint8)
 grayscale_images = grayscale_images.reshape(grayscale_images.shape[0], H*W)
 
-images = grayscale_images
-mode = "gray" # "color"
+
+mode = "color" # "gray"
+images = grayscale_images if mode == "gray" else rgb_images
 
 labels = data1[b'labels'][:cut]
 reduced = reduce_dim(images)
