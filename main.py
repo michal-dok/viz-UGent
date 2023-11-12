@@ -1,6 +1,5 @@
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc, html
 from dash.dependencies import Input, Output
 from functions import *
 import plotly.express as px
@@ -9,6 +8,10 @@ import base64
 import PIL.Image
 import cv2
 
+from dash import dcc
+from dash import html
+
+
 
 ## TODO: app doesn't seem to show correct picutres, check how to access desired rows
 
@@ -16,10 +19,18 @@ import cv2
 app = dash.Dash(__name__)
 
 app.layout = html.Div([
-    html.H1("Simple Dash App with Scatter Plot"),
-    dcc.Input(id='input', type='text', value=''),
-    dcc.Graph(id='scatter-plot'), 
-    html.Div(id='image-container')
+    html.Div(
+        children=[
+            html.H1("DASHBOARD", style={'color': '#FFFFFF', 'text-shadow': '2px 2px #999999', 'font': '45px Arial Black', 'text-align': 'center'}),
+            html.P("Data visualization for and with AI", style={'color': '#F0F8FF', 'font': '20px Arial', 'text-align': 'center'}),
+        ],
+        style={'background-image': 'linear-gradient(to bottom, #00BFFF, #0000FF)', 'padding': '20px', 'border-radius': '10px', 'box-shadow': '0px 4px 8px rgba(0, 0, 0, 0.1)'}
+    ),
+    html.P("Search:", style={'color': '#000000', 'font': '15px Arial', 'text-align': 'left', 'margin-left': '20px'}),
+    dcc.Input(id='input', type='text', value='', style={'margin-left': '20px'}),
+    dcc.Graph(id='scatter-plot', style={'background-color': '#ADD8E6', 'padding': '20px', 'border-radius': '10px', 'margin-top': '20px'}), 
+     html.P("Image:", style={'color': '#000000', 'font': '15px Arial', 'text-align': 'left', 'margin-left': '20px'}),
+    html.Div(id='image-container', style={'text-align': 'center', 'margin-top': '20px', 'background-color': '#ADD8E6', 'padding': '20px', 'border-radius': '10px', 'margin-top': '20px'})
 ])
 
 @app.callback(
@@ -109,6 +120,7 @@ labelindex2word = {0:"airplane", 1:"automobile", 2: "bird", 3: "cat", 4: "deer",
 
 if __name__ == '__main__':
     app.run_server(debug=True)
+
 
 
 
