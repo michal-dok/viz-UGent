@@ -1,38 +1,32 @@
 import dash
 from dash import dcc, html
 from dash.dependencies import Input, Output
-from functions import *
 import plotly.express as px
 import io
 import base64
 import PIL.Image
 import cv2
-
-from dash import dcc
-from dash import html
-
-
-
-## TODO: app doesn't seem to show correct picutres, check how to access desired rows
-
+from functions import *
 
 app = dash.Dash(__name__)
 
 dataset_path = "./data/cifar-10-python.tar.gz"
 data1 = unpickle("./data/data_batch_1")
+
 cut = 100
 rgb_images = data1[b'data']
-reduced_global = reduce_dim(images)
+reduced_global = reduce_dim(rgb_images)
 H = W = 32
 
-mode = "color" # "gray"
 images = rgb_images
 
 custom_variable = [str(i) for i in range(len(reduced_global))]
 
 labels = data1[b'labels']
-labelindex2word = {0:"airplane", 1:"automobile", 2: "bird", 3: "cat", 4: "deer", 
- 5: "dog", 6: "frog", 7: "horse", 8: "ship", 9: "truck"}
+labelindex2word = {
+    0:"airplane", 1:"automobile", 2: "bird", 3: "cat", 4: "deer", 
+    5: "dog", 6: "frog", 7: "horse", 8: "ship", 9: "truck"
+}
 
 app.layout = html.Div([
     html.Div(
