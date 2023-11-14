@@ -42,12 +42,11 @@ app.layout = html.Div([
         ],
         style={'background-image': 'linear-gradient(to bottom, #00BFFF, #0000FF)', 'padding': '20px', 'border-radius': '10px', 'box-shadow': '0px 4px 8px rgba(0, 0, 0, 0.1)'}
     ),
-    #html.P("Search:", style={'color': '#000000', 'font': '15px Arial', 'text-align': 'left', 'margin-left': '20px'}),
-    #dcc.Input(id='input', type='text', value='', style={'display': 'none'}),
     dcc.Graph(id='scatter-plot', style={'background-color': '#ADD8E6', 'padding': '20px', 'border-radius': '10px', 'margin-top': '20px'}), 
+    html.P("Number of images displayed:", style={'color': '#000000', 'font': '15px Arial', 'text-align': 'left', 'margin-left': '20px'}),
+    dcc.Slider(id='input', min=0, max=len(data1[b'data']),step=500, value=500, marks={i: str(i) for i in range(0, len(data1[b'data']) + 1, 500)}),
     html.P("Image:", style={'color': '#000000', 'font': '15px Arial', 'text-align': 'left', 'margin-left': '20px'}),
-    html.Div(id='image-container', style={'text-align': 'center', 'margin-top': '20px', 'background-color': '#ADD8E6', 'padding': '20px', 'border-radius': '10px', 'margin-top': '20px'}),
-    dcc.Slider(id='input', min=0, max=len(data1[b'data']),step=500, value=100)
+    html.Div(id='image-container', style={'text-align': 'center', 'margin-top': '20px', 'background-color': '#ADD8E6', 'padding': '20px', 'border-radius': '10px', 'margin-top': '20px'})
 ])
 
 @app.callback(
@@ -67,14 +66,15 @@ def update_scatter_plot(input_value):
     y = reduced[:,1]
     labels_word = [labelindex2word[l] for l in labels]
     data = {
-    'x': x,
-    'y': y,
-    'labels': labels_word,
+    'PCA_1': x,
+    'PCA_2': y,
+    'Categories': labels_word,
     'custom_variable': custom_variable[:cut]
     }
 
     # Create a scatter plot
-    fig = px.scatter(data, x='x', y='y', color='labels', custom_data=['custom_variable'])
+    fig = px.scatter(data, x='PCA_1', y='PCA_2', color='Categories', custom_data=['custom_variable'])
+    fig.update_layout(title_text='PCA of cifar-10 dataset', title_x=0.5)
 
     return fig
 
