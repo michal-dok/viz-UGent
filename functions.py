@@ -1,5 +1,4 @@
 from sklearn.decomposition import PCA
-import plotly
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -21,23 +20,10 @@ def row2array(row):
     arr = np.dstack([r_mat, g_mat, b_mat])
     return arr
 
-def row2array_gray(row):
-    gray = row.reshape((32, 32))
-    arr = gray
-    return arr
-
 
 def reduce_dim(dataset, components=2):
     """takes array of images (one row one image) and returns reduced dataset"""
     model = PCA(n_components=components)
     reduced = model.fit_transform(dataset)
     return reduced
-
-
-dataset_path = "./data/cifar-10-python.tar.gz"
-
-data1 = unpickle("./data/data_batch_1")
-
-images = data1[b'data']
-labels = data1[b'labels']
 

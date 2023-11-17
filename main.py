@@ -47,14 +47,12 @@ app.layout = html.Div([
     Output('scatter-plot', 'figure'),
     [Input('input', 'value')]
 )
+
 def update_scatter_plot(input_value):
-    # Sample scatter plot with random data
     cut = input_value
-    rgb_images = data1[b'data'][:cut]
-    images = rgb_images
 
     labels = data1[b'labels'][:cut]
-    reduced=reduced_global[:cut]
+    reduced = reduced_global[:cut]
     
     x = reduced[:,0]
     y = reduced[:,1]
@@ -66,7 +64,6 @@ def update_scatter_plot(input_value):
     'custom_variable': custom_variable[:cut]
     }
 
-    # Create a scatter plot
     fig = px.scatter(data, x='PCA_1', y='PCA_2', color='Categories', custom_data=['custom_variable'])
     fig.update_layout(title_text='PCA of cifar-10 dataset', title_x=0.5)
 
@@ -78,8 +75,6 @@ def numpy_array_to_base64(arr):
     buffered = io.BytesIO()
     img.save(buffered, format="PNG")
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
-
-#coordinates_array=np.array([coordinates])
 
 
 @app.callback(
@@ -96,14 +91,9 @@ def display_image_on_click(clickData):
         clicked_image = row2array(clicked_row)
         w, h, d = W, H, 3
         resized_image = cv2.resize(clicked_image, dsize=(w*10, h*10), interpolation=cv2.INTER_CUBIC)
-        # You can replace the image URL with your own image source
         image_base64 = numpy_array_to_base64(resized_image)
         return html.Img(src=f"data:image/png;base64, {image_base64}", style={'max-width': '100%', 'height': 'auto'})
     
 
 if __name__ == '__main__':
     app.run_server(debug=True)
-
-
-
-
