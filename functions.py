@@ -1,7 +1,9 @@
 from sklearn.decomposition import PCA
 import numpy as np
 import matplotlib.pyplot as plt
-
+import keras
+from keras.models import Model
+import keract
 
 def unpickle(file):
     """load dataset"""
@@ -27,3 +29,16 @@ def reduce_dim(dataset, components=2):
     reduced = model.fit_transform(dataset)
     return reduced
 
+
+
+def images2activations(data, layername):
+    input_shape = (32, 32, 3) 
+    img = rgb_images[0]
+    img = img.reshape(input_shape)
+    img_array = np.expand_dims(img, axis=0)  # Add an extra dimension for batch
+    img_array = img_array / 255.0
+
+    layer_name = "activation_19"
+
+    activations = keract.get_activations(vgg_model, img_array, layer_names=layer_name)
+    print(activations[layer_name])

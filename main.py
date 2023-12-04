@@ -7,6 +7,16 @@ import base64
 import PIL.Image
 import cv2
 from functions import *
+from sklearn.manifold import TSNE
+import keras
+import models.cifar10vgg as VGG  
+import pandas as pd
+import numpy as np
+from keras.applications.vgg16 import preprocess_input
+from keras.models import load_model
+from keras.preprocessing import image
+import keract
+
 
 app = dash.Dash(__name__)
 
@@ -28,6 +38,13 @@ labelindex2word = {
     5: "dog", 6: "frog", 7: "horse", 8: "ship", 9: "truck"
 }
 
+
+model_path = "./models/cifar10vgg.h5"
+
+vgg_model = VGG.cifar10vgg(False)
+vgg_model = vgg_model.build_model()
+
+
 app.layout = html.Div([
     html.Div(
         children=[
@@ -43,33 +60,48 @@ app.layout = html.Div([
     html.Div(id='image-container', style={'text-align': 'center', 'margin-top': '20px', 'background-color': '#ADD8E6', 'padding': '20px', 'border-radius': '10px', 'margin-top': '20px'})
 ])
 
+
+def preprocess_images(images, nsamples=1):
+    input_shape = (nsamples, 32, 32, 3) 
+    img_array = images.reshape(input_shape)
+    img_array = img_array / 255.0
+
+    return img_array
+
 @app.callback(
     Output('scatter-plot', 'figure'),
     [Input('input', 'value')]
 )
-
 def update_scatter_plot(input_value):
-    cut = input_value
+    layer_name = "activation_19"    
+    layer_names = [layer.name for layer in vgg_model.layers]
 
-    labels = data1[b'labels'][:cut]
-    reduced = reduced_global[:cut]
+    preprocessed_batch = preprocess_images(rgb_images, len(rgb_images))
+    activations_batch = keract.get_activations(vgg_model, preprocessed_batch, layer_names=layer_name)
     
-    x = reduced[:,0]
-    y = reduced[:,1]
+    activations_batch_curr_layer = activations_batch[layer_name]
+    n_samples = activations_batch_curr_layer.shape[0]
+
+    activ_batch_reshaped = activations_batch_curr_layer.reshape(n_samples, -1)
+    pca = PCA(n_components=2)
+    reduced = pca.fit_transform(activ_batch_reshaped)
+
+    x = reduced[:, 0]
+    y = reduced[:, 1]
     labels_word = [labelindex2word[l] for l in labels]
     data = {
     'PCA_1': x,
     'PCA_2': y,
-    'Categories': labels_word,
-    'custom_variable': custom_variable[:cut]
+    'Categories': labels_word
+    #'custom_variable': custom_variable[:cut]
     }
 
-    fig = px.scatter(data, x='PCA_1', y='PCA_2', color='Categories', custom_data=['custom_variable'])
+    fig = px.scatter(data, x='PCA_1', y='PCA_2', color='Categories')# , custom_data=['custom_variable'])
     fig.update_layout(title_text='PCA of cifar-10 dataset', title_x=0.5)
 
     return fig
 
-    
+
 def numpy_array_to_base64(arr):
     img = PIL.Image.fromarray(arr)
     buffered = io.BytesIO()
