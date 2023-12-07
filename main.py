@@ -83,7 +83,7 @@ app.layout = html.Div([
     Input('layer-selection','value')
 )
 def update_scatter_plot(input_value):
-    layer_name = "activation_19"    
+    layer_name = "dense_3"    
     layer_names = [layer.name for layer in vgg_model.layers]
 
     preprocessed_batch = preprocess_images(rgb_images, len(rgb_images))
@@ -112,7 +112,6 @@ def update_scatter_plot(input_value):
     fig.update_layout(title_text='PCA of cifar-10 dataset', title_x=0.5)
 
     return fig
-
 
 def numpy_array_to_base64(arr):
     img = PIL.Image.fromarray(arr)

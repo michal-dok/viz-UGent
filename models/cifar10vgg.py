@@ -3,7 +3,7 @@ from __future__ import print_function
 import keras
 from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
-from keras.models import Sequential
+from keras.models import Sequential, Model
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv2D, MaxPooling2D, BatchNormalization
 from keras import optimizers
@@ -22,9 +22,15 @@ class cifar10vgg:
         if train:
             self.model = self.train(self.model)
         else:
-            self.model.load_weights('cifar10vgg.h5')
+            self.model.load_weights('./models/cifar10vgg.h5')
 
+    def get_input_layer(self):
+        return self.model.input
 
+    def get_activation_model(self, layer_name):
+        intermediate_layer_model = Model(inputs=self.get_input_layer(), outputs=self.model.get_layer(layer_name).output)
+        return intermediate_layer_model
+    
     def build_model(self):
         # Build the network of vgg for 10 classes with massive dropout and weight decay as described in the paper.
 
@@ -151,7 +157,7 @@ class cifar10vgg:
         lr_decay = 1e-6
         lr_drop = 20
         # The data, shuffled and split between train and test sets:
-        (x_train, y_train), (x_test, y_test) = cifar10.load_data()
+        (x_train, y_train), (x_test, y_test) = [None, None], [None, None]# cifar10.load_data()
         x_train = x_train.astype('float32')
         x_test = x_test.astype('float32')
         x_train, x_test = self.normalize(x_train, x_test)
@@ -205,13 +211,12 @@ if __name__ == '__main__':
     y_train = keras.utils.to_categorical(y_train, 10)
     y_test = keras.utils.to_categorical(y_test, 10)
 
-    model = cifar10vgg()
+    model = cifar10vgg(False)
 
     predicted_x = model.predict(x_test)
     residuals = np.argmax(predicted_x,1)!=np.argmax(y_test,1)
 
     loss = sum(residuals)/len(residuals)
     print("the validation 0/1 loss is: ",loss)
-
 
 
