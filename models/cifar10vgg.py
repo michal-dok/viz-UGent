@@ -220,4 +220,3 @@ if __name__ == '__main__':
     print("the validation 0/1 loss is: ",loss)
 
 
-
