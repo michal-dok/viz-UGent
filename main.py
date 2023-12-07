@@ -56,6 +56,12 @@ app.layout = html.Div([
         ],
         style={'background-image': 'linear-gradient(to bottom, #00BFFF, #0000FF)', 'padding': '20px', 'border-radius': '10px', 'box-shadow': '0px 4px 8px rgba(0, 0, 0, 0.1)'}
     ),
+    dcc.Dropdown(
+        id='layer-selection',
+        options=[{'label': layer['label'], 'value': layer['value']} for layer in vgg_model.layers],
+        value='activation_19',  # Default selected value
+        style={'width': '50%', 'margin': 'auto', 'margin-top': '20px'}
+    ),
     dcc.Graph(id='scatter-plot', style={'background-color': '#ADD8E6', 'padding': '20px', 'border-radius': '10px', 'margin-top': '20px'}), 
     html.P("Number of images displayed:", style={'color': '#000000', 'font': '15px Arial', 'text-align': 'left', 'margin-left': '20px'}),
     dcc.Slider(id='input', min=0, max=len(data1[b'data']),step=500, value=500, marks={i: str(i) for i in range(0, len(data1[b'data']) + 1, 500)}),
@@ -67,9 +73,14 @@ app.layout = html.Div([
 ])
 
 
+
+
+
+
 @app.callback(
     Output('scatter-plot', 'figure'),
-    [Input('input', 'value')]
+    Input('input', 'value'),
+    Input('layer-selection','value')
 )
 def update_scatter_plot(input_value):
     layer_name = "activation_19"    
