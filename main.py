@@ -28,12 +28,12 @@ data1 = unpickle("./data/data_batch_1")
 
 cut = 100
 rgb_images = data1[b'data']
-reduced_global = reduce_dim(rgb_images)
+#reduced_global = reduce_dim(rgb_images)
 H = W = 32
 
 images = rgb_images
 
-custom_variable = [str(i) for i in range(len(reduced_global))]
+custom_variable = [str(i) for i in range(len(data1[b'data']))]
 
 labels = data1[b'labels']
 labelindex2word = {
@@ -45,7 +45,7 @@ labelindex2word = {
 model_path = "./models/cifar10vgg.h5"
 
 vgg_model = VGG.cifar10vgg(False)
-vgg_model = vgg_model.build_model()
+#vgg_model = vgg_model.build_model()
 
 
 app.layout = html.Div([
@@ -66,17 +66,25 @@ app.layout = html.Div([
     html.Div(id='explanation-container', style={'text-align': 'center', 'margin-top': '20px', 'background-color': '#ADD8E6', 'padding': '20px', 'border-radius': '10px', 'margin-top': '20px'})
 ])
 
+def predict_labels(images):
+    return vgg_model.predict(images)
+
 
 @app.callback(
     Output('scatter-plot', 'figure'),
     [Input('input', 'value')]
 )
 def update_scatter_plot(input_value):
-    layer_name = "dense_3"    
-    layer_names = [layer.name for layer in vgg_model.layers]
+    print(input_value)
+    layer_names = [layer.name for layer in vgg_model.model.layers]
+    print(layer_names)
+    layer_name = "activation_14"    
+
+    cut = int(input_value)
+    rgb_images = data1[b'data'][:cut]
 
     preprocessed_batch = preprocess_images(rgb_images, len(rgb_images))
-    activations_batch = keract.get_activations(vgg_model, preprocessed_batch, layer_names=layer_name)
+    activations_batch = keract.get_activations(vgg_model.model, preprocessed_batch, layer_names=layer_name)
     
     activations_batch_curr_layer = activations_batch[layer_name]
     n_samples = activations_batch_curr_layer.shape[0]
@@ -87,15 +95,14 @@ def update_scatter_plot(input_value):
 
     x = reduced[:, 0]
     y = reduced[:, 1]
-    labels_word = [labelindex2word[l] for l in labels]
+    labels_word = [labelindex2word[l] for l in labels][:cut]
     data = {
     'PCA_1': x,
     'PCA_2': y,
     'Categories': labels_word,
-    'custom_variable': custom_variable#[:cut]
+    'custom_variable': custom_variable[:cut]
     }
 
-    #lime_explanation = lime_explanation_generator(image_data, model, class_index)
 
     fig = px.scatter(data, x='PCA_1', y='PCA_2', color='Categories', custom_data=['custom_variable'])
     fig.update_layout(title_text='PCA of cifar-10 dataset', title_x=0.5)
@@ -146,22 +153,22 @@ def generate_explanation(n_clicks, clickData):
     # Generate explanations
     explainer = lime_image.LimeImageExplainer()
     img4explanation = images[point_index].reshape((32, 32, 3))
-    explanation = explainer.explain_instance(img4explanation.astype('double'), vgg_model.predict,  
-                                                top_labels=3, hide_color=0, num_samples=1000)
+    explanation = explainer.explain_instance(img4explanation.astype('double'), predict_labels,  
+                                                top_labels=3, hide_color=0, num_samples=100)
 
     temp_1, mask_1 = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=True, num_features=5, hide_rest=True)
-    temp_2, mask_2 = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=False, num_features=10, hide_rest=False)
+    #temp_2, mask_2 = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=False, num_features=10, hide_rest=False)
 
     mask_1_resized = cv2.resize(mask_1, (clicked_image.shape[1], clicked_image.shape[0]))
-    mask_2_resized = cv2.resize(mask_2, (clicked_image.shape[1], clicked_image.shape[0]))
+    #mask_2_resized = cv2.resize(mask_2, (clicked_image.shape[1], clicked_image.shape[0]))
 
     mask_1_3d = np.repeat(mask_1_resized[:, :, np.newaxis], 3, axis=2)
-    mask_2_3d = np.repeat(mask_2_resized[:, :, np.newaxis], 3, axis=2)
+    #mask_2_3d = np.repeat(mask_2_resized[:, :, np.newaxis], 3, axis=2)
 
     # Apply masks to the image
     alpha = 0.5  # Adjust transparency if needed
     combined_image = cv2.addWeighted(clicked_image.astype('float32'), 1, mask_1_3d.astype('float32'), alpha, 0)
-    combined_image = cv2.addWeighted(combined_image, 1, mask_2_3d.astype('float32'), alpha, 0)
+    # combined_image = cv2.addWeighted(combined_image, 1, mask_2_3d.astype('float32'), alpha, 0)
     
     resized_combined_image = cv2.resize(combined_image, dsize=(w*10, h*10), interpolation=cv2.INTER_CUBIC)
 
