@@ -16,8 +16,14 @@ from keras.models import load_model
 from keras.preprocessing import image
 import keract
 from skimage.segmentation import mark_boundaries
+from skimage.transform import resize
 #from tensorflow.keras.applications import inception_v3 as inc_net
 from lime import lime_image
+
+
+import matplotlib.pyplot as plt
+
+#from dash import Dash, dcc, html, Input, Output, State
 
 
 
@@ -47,7 +53,6 @@ model_path = "./models/cifar10vgg.h5"
 vgg_model = VGG.cifar10vgg(False)
 #vgg_model = vgg_model.build_model()
 
-
 app.layout = html.Div([
     html.Div(
         children=[
@@ -58,8 +63,8 @@ app.layout = html.Div([
     ),
     dcc.Dropdown(
         id='layer-selection',
-        options=[{'label': layer['label'], 'value': layer['value']} for layer in vgg_model.layers],
-        value='activation_19',  # Default selected value
+        options=[{'label': layer.name, 'value': layer.name} for layer in vgg_model.model.layers],
+        value='activation_14',  # Default selected value
         style={'width': '50%', 'margin': 'auto', 'margin-top': '20px'}
     ),
     dcc.Graph(id='scatter-plot', style={'background-color': '#ADD8E6', 'padding': '20px', 'border-radius': '10px', 'margin-top': '20px'}), 
@@ -76,22 +81,15 @@ def predict_labels(images):
     return vgg_model.predict(images)
 
 
-
-
-
-
 @app.callback(
     Output('scatter-plot', 'figure'),
     Input('input', 'value'),
     Input('layer-selection','value')
 )
-def update_scatter_plot(input_value):
-    print(input_value)
-    layer_names = [layer.name for layer in vgg_model.model.layers]
-    print(layer_names)
-    layer_name = "activation_14"    
+def update_scatter_plot(cut, layer_name):
+    print(cut, layer_name)
 
-    cut = int(input_value)
+    cut = int(cut)
     rgb_images = data1[b'data'][:cut]
 
     preprocessed_batch = preprocess_images(rgb_images, len(rgb_images))
@@ -159,36 +157,24 @@ def generate_explanation(n_clicks, clickData):
     clicked_image = row2array(clicked_row)
     w, h, d = W, H, 3
     resized_image = cv2.resize(clicked_image, dsize=(w*10, h*10), interpolation=cv2.INTER_CUBIC)
-    #image_base64 = numpy_array_to_base64(resized_image)
 
-    # Generate explanations
     explainer = lime_image.LimeImageExplainer()
     img4explanation = images[point_index].reshape((32, 32, 3))
     explanation = explainer.explain_instance(img4explanation.astype('double'), predict_labels,  
-                                                top_labels=3, hide_color=0, num_samples=100)
+                                                top_labels=1, hide_color=0, num_samples=200)
 
-    temp_1, mask_1 = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=True, num_features=5, hide_rest=True)
-    #temp_2, mask_2 = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=False, num_features=10, hide_rest=False)
+    temp_1, mask_1 = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=True, num_features=5, hide_rest=False)
+    marked = mark_boundaries((temp_1).astype(np.uint8), (mask_1).astype(np.uint8))
 
-    mask_1_resized = cv2.resize(mask_1, (clicked_image.shape[1], clicked_image.shape[0]))
-    #mask_2_resized = cv2.resize(mask_2, (clicked_image.shape[1], clicked_image.shape[0]))
+    #plt.imsave("lime-explanation-image.png", marked)
+    resized_image = resize(marked, (marked.shape[0] * 10, marked.shape[1] * 10), anti_aliasing=True)
+    resized_image = (resized_image * 255).astype(np.uint8)
 
-    mask_1_3d = np.repeat(mask_1_resized[:, :, np.newaxis], 3, axis=2)
-    #mask_2_3d = np.repeat(mask_2_resized[:, :, np.newaxis], 3, axis=2)
+   
+    #cv2.imwrite('resizedonly_image.png', resized_image)
+    encoded_image = numpy_array_to_base64(resized_image) 
+    return html.Img(src=f"data:image/png;base64, {encoded_image}", style={'max-width': '100%', 'height': 'auto'})
 
-    # Apply masks to the image
-    alpha = 0.5  # Adjust transparency if needed
-    combined_image = cv2.addWeighted(clicked_image.astype('float32'), 1, mask_1_3d.astype('float32'), alpha, 0)
-    # combined_image = cv2.addWeighted(combined_image, 1, mask_2_3d.astype('float32'), alpha, 0)
-    
-    resized_combined_image = cv2.resize(combined_image, dsize=(w*10, h*10), interpolation=cv2.INTER_CUBIC)
-
-    cv2.imwrite('combined_image.png', resized_combined_image)
-    # Convert the combined image to base64 for display
-    _, encoded_image = cv2.imencode('.png', resized_combined_image)  # Convert to PNG format
-    combined_image_base64 =  base64.b64encode(encoded_image).decode('utf-8') 
-    # numpy_array_to_base64(combined_image) #base64.b64encode(combined_image).decode("utf-8")
-    return html.Img(src=f"data:image/png;base64, {combined_image_base64}", style={'max-width': '100%', 'height': 'auto'})
 
 if __name__ == '__main__':
     app.run_server(debug=True)
