@@ -125,11 +125,14 @@ def update_scatter_plot(cut, layer_name):
     x = reduced[:, 0]
     y = reduced[:, 1]
     labels_word = [labelindex2word[l] for l in labels][:cut]
+    pred_word = [labelindex2word[l] for l in pred_indices][:cut]
     data = {
     'PCA_1': x,
     'PCA_2': y,
     'Categories': labels_word,
-    'custom_variable': custom_variable[:cut]
+    'custom_variable': custom_variable[:cut],
+    'custom_variable2': labels[:cut],
+    'custom_variable3': pred_indices[:cut]
     }
 
     # Create a mask for matched and unmatched points
@@ -141,22 +144,24 @@ def update_scatter_plot(cut, layer_name):
     y_matched = [y[i] for i in mask_matched]
     labels_word_matched = [labels_word[i] for i in mask_matched]
     custom_variable_matched = [custom_variable[i] for i in mask_matched]
+    pred_indices_matched = [pred_word[i] for i in mask_matched]
 
     x_unmatched = [x[i] for i in mask_unmatched]
     y_unmatched = [y[i] for i in mask_unmatched]
     labels_word_unmatched = [labels_word[i] for i in mask_unmatched]
     custom_variable_unmatched = [custom_variable[i] for i in mask_unmatched]
+    pred_indices_unmatched = [pred_word[i] for i in mask_unmatched]
 
     fig = px.scatter()
     
     # Adding traces for matched and unmatched points with colors based on all categories
     if x_matched:
-        matched_fig = px.scatter(x=x_matched, y=y_matched, color=labels_word_matched, custom_data=[custom_variable_matched])
+        matched_fig = px.scatter(x=x_matched, y=y_matched, color=labels_word_matched, custom_data=[custom_variable_matched, labels_word_matched, pred_indices_matched])
         for trace in matched_fig.data:
             fig.add_trace(trace)
     
     if x_unmatched:
-        unmatched_fig = px.scatter(x=x_unmatched, y=y_unmatched, color=labels_word_unmatched, custom_data=[custom_variable_unmatched])
+        unmatched_fig = px.scatter(x=x_unmatched, y=y_unmatched, color=labels_word_unmatched, custom_data=[custom_variable_unmatched, labels_word_unmatched, pred_indices_unmatched])
         for trace in unmatched_fig.data:
             trace.marker.symbol = 'cross'  # Set marker symbol to cross for unmatched points
             fig.add_trace(trace)
@@ -174,7 +179,9 @@ def update_scatter_plot(cut, layer_name):
     
     # Update hover information to display custom_variable
     fig.update_traces(
-        hovertemplate='<b>img_id</b>: %{customdata[0]}<br><extra></extra>'
+        hovertemplate='<b>img_id</b>: %{customdata[0]}<br>'
+                      '<b>True Label</b>: %{customdata[1]}<br>'
+                      '<b>Predicted Label</b>: %{customdata[2]}<br><extra></extra>',
     )
     return fig
 
