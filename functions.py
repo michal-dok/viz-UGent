@@ -42,16 +42,6 @@ def convert_image_to_base64(image):
     img.save(buffered, format="PNG")
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-def lime_explanation_generator(image, model, class_index):
-    explainer = lime_image.LimeImageExplainer()
-    # image = preprocess_image(image)
-    def predict_fn(images):
-        return model.predict(images)
-    explanation = explainer.explain_instance(image, predict_fn, labels=[class_index], top_labels=1, hide_color=0, num_samples=1000)
-    lime_image, mask = explanation.get_image_and_mask(class_index, positive_only=False, num_features=10, hide_rest=False)
-    lime_image_data = convert_image_to_base64(lime_image)
-    return lime_image_data
-
 def preprocess_images(images, nsamples=1):
     input_shape = (nsamples, 32, 32, 3) 
     img_array = images.reshape(input_shape)

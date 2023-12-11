@@ -17,24 +17,29 @@ from keras.preprocessing import image
 import keract
 from skimage.segmentation import mark_boundaries
 from skimage.transform import resize
-#from tensorflow.keras.applications import inception_v3 as inc_net
 from lime import lime_image
-
-
 import matplotlib.pyplot as plt
-
-#from dash import Dash, dcc, html, Input, Output, State
-
-
+#from keras.datasets import cifar10
+import tensorflow as tf
 
 app = dash.Dash(__name__)
 
 dataset_path = "./data/cifar-10-python.tar.gz"
 data1 = unpickle("./data/data_batch_1")
 
+data1[b'data'] = data1[b'data'][:5000]
+data1[b'labels'] = data1[b'labels'][:5000]
+
+
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+x_train = x_train.astype('float32')
+x_test = x_test.astype('float32')
+
+data1[b'data'] = x_train[:5000]
+data1[b'labels'] = y_train[:5000]
+
 cut = 100
 rgb_images = data1[b'data']
-#reduced_global = reduce_dim(rgb_images)
 H = W = 32
 
 images = rgb_images
@@ -48,10 +53,21 @@ labelindex2word = {
 }
 
 
+
 model_path = "./models/cifar10vgg.h5"
 
 vgg_model = VGG.cifar10vgg(False)
-#vgg_model = vgg_model.build_model()
+
+predictions = []
+preprocessed_batch = preprocess_images(rgb_images, len(rgb_images))
+pred_distributions = vgg_model.predict(preprocessed_batch)
+pred_indices = np.argmax(pred_distributions, axis=1)
+pred_indices_reshaped = pred_indices.reshape(-1, 1).flatten()
+
+
+predictions_match = np.array(labels).flatten() == np.array(pred_indices_reshaped).flatten()
+print("correct ratio", sum(predictions_match) / len(predictions_match), len(predictions_match))  
+
 
 app.layout = html.Div([
     html.Div(
@@ -166,12 +182,10 @@ def generate_explanation(n_clicks, clickData):
     temp_1, mask_1 = explanation.get_image_and_mask(explanation.top_labels[0], positive_only=True, num_features=5, hide_rest=False)
     marked = mark_boundaries((temp_1).astype(np.uint8), (mask_1).astype(np.uint8))
 
-    #plt.imsave("lime-explanation-image.png", marked)
     resized_image = resize(marked, (marked.shape[0] * 10, marked.shape[1] * 10), anti_aliasing=True)
     resized_image = (resized_image * 255).astype(np.uint8)
 
    
-    #cv2.imwrite('resizedonly_image.png', resized_image)
     encoded_image = numpy_array_to_base64(resized_image) 
     return html.Img(src=f"data:image/png;base64, {encoded_image}", style={'max-width': '100%', 'height': 'auto'})
 

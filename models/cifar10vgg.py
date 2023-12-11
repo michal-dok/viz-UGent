@@ -22,6 +22,7 @@ class cifar10vgg:
         if train:
             self.model = self.train(self.model)
         else:
+            #self.model.load_weights('cifar10vgg.h5')
             self.model.load_weights('./models/cifar10vgg.h5')
 
     def get_input_layer(self):
