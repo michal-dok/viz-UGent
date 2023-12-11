@@ -21,6 +21,8 @@ from lime import lime_image
 import matplotlib.pyplot as plt
 #from keras.datasets import cifar10
 import tensorflow as tf
+import plotly.graph_objects as go
+
 
 app = dash.Dash(__name__)
 
@@ -35,8 +37,8 @@ data1[b'labels'] = data1[b'labels'][:5000]
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
 
-data1[b'data'] = x_train[:5000]
-data1[b'labels'] = y_train[:5000]
+#data1[b'data'] = x_train[:5000]
+#data1[b'labels'] = y_train[:5000]
 
 cut = 100
 rgb_images = data1[b'data']
@@ -107,6 +109,8 @@ def update_scatter_plot(cut, layer_name):
 
     cut = int(cut)
     rgb_images = data1[b'data'][:cut]
+    predictions_match_cut = predictions_match[:cut]
+    markers = ['circle' if match else 'cross' for match in predictions_match_cut]
 
     preprocessed_batch = preprocess_images(rgb_images, len(rgb_images))
     activations_batch = keract.get_activations(vgg_model.model, preprocessed_batch, layer_names=layer_name)
@@ -128,10 +132,50 @@ def update_scatter_plot(cut, layer_name):
     'custom_variable': custom_variable[:cut]
     }
 
+    # Create a mask for matched and unmatched points
+    mask_matched = [i for i, match in enumerate(predictions_match[:cut]) if match]
+    mask_unmatched = [i for i, match in enumerate(predictions_match[:cut]) if not match]
 
-    fig = px.scatter(data, x='PCA_1', y='PCA_2', color='Categories', custom_data=['custom_variable'])
-    fig.update_layout(title_text='PCA of cifar-10 dataset', title_x=0.5)
+    # Filter data based on the mask
+    x_matched = [x[i] for i in mask_matched]
+    y_matched = [y[i] for i in mask_matched]
+    labels_word_matched = [labels_word[i] for i in mask_matched]
+    custom_variable_matched = [custom_variable[i] for i in mask_matched]
 
+    x_unmatched = [x[i] for i in mask_unmatched]
+    y_unmatched = [y[i] for i in mask_unmatched]
+    labels_word_unmatched = [labels_word[i] for i in mask_unmatched]
+    custom_variable_unmatched = [custom_variable[i] for i in mask_unmatched]
+
+    fig = px.scatter()
+    
+    # Adding traces for matched and unmatched points with colors based on all categories
+    if x_matched:
+        matched_fig = px.scatter(x=x_matched, y=y_matched, color=labels_word_matched, custom_data=[custom_variable_matched])
+        for trace in matched_fig.data:
+            fig.add_trace(trace)
+    
+    if x_unmatched:
+        unmatched_fig = px.scatter(x=x_unmatched, y=y_unmatched, color=labels_word_unmatched, custom_data=[custom_variable_unmatched])
+        for trace in unmatched_fig.data:
+            trace.marker.symbol = 'cross'  # Set marker symbol to cross for unmatched points
+            fig.add_trace(trace)
+
+    # Update layout including the legend and hover information
+    fig.update_layout(
+        title='PCA of cifar-10 dataset',
+        title_x=0.5,
+        xaxis={'title': 'PCA_1'},
+        yaxis={'title': 'PCA_2'},
+        hovermode='closest',
+        showlegend=True,  # Display the legend
+        legend=dict(title='Categories'),  # Set legend title to 'Categories'
+    )
+    
+    # Update hover information to display custom_variable
+    fig.update_traces(
+        hovertemplate='<b>img_id</b>: %{customdata[0]}<br><extra></extra>'
+    )
     return fig
 
 def numpy_array_to_base64(arr):
