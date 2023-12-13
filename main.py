@@ -23,82 +23,155 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import plotly.graph_objects as go
 
-
+# Initialize Dash app
 app = dash.Dash(__name__)
 
+# Load dataset
 dataset_path = "./data/cifar-10-python.tar.gz"
 data1 = unpickle("./data/data_batch_1")
 
+# Reduce data size for faster processing
 data1[b'data'] = data1[b'data'][:5000]
 data1[b'labels'] = data1[b'labels'][:5000]
 
-
+# Load CIFAR-10 dataset using TensorFlow
 (x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
 x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
 
-#data1[b'data'] = x_train[:5000]
-#data1[b'labels'] = y_train[:5000]
 
+# Initial parameters
 cut = 100
-rgb_images = data1[b'data']
 H = W = 32
 
+# Extract RGB images
+rgb_images = data1[b'data']
 images = rgb_images
 
+# Generate custom variable
 custom_variable = [str(i) for i in range(len(data1[b'data']))]
 
+# Extract labels and create a mapping from label index to word
 labels = data1[b'labels']
 labelindex2word = {
-    0:"airplane", 1:"automobile", 2: "bird", 3: "cat", 4: "deer", 
+    0: "airplane", 1: "automobile", 2: "bird", 3: "cat", 4: "deer",
     5: "dog", 6: "frog", 7: "horse", 8: "ship", 9: "truck"
 }
 
-
-
+# Define the path to the pre-trained model
 model_path = "./models/cifar10vgg.h5"
 
+# Load VGG model
 vgg_model = VGG.cifar10vgg(False)
 
+# Make predictions on the dataset
 predictions = []
 preprocessed_batch = preprocess_images(rgb_images, len(rgb_images))
 pred_distributions = vgg_model.predict(preprocessed_batch, normalize=False)
 pred_indices = np.argmax(pred_distributions, axis=1)
 pred_indices_reshaped = pred_indices.reshape(-1, 1).flatten()
 
-
+# Check correctness of predictions
 predictions_match = np.array(labels).flatten() == np.array(pred_indices_reshaped).flatten()
-print("correct ratio", sum(predictions_match) / len(predictions_match), len(predictions_match))  
-
+print("Correct ratio:", sum(predictions_match) / len(predictions_match), len(predictions_match))
 
 app.layout = html.Div([
+    # Header Section
     html.Div(
         children=[
-            html.H1("DASHBOARD", style={'color': '#FFFFFF', 'text-shadow': '2px 2px #999999', 'font': '45px Arial Black', 'text-align': 'center'}),
-            html.P("Data visualization for and with AI", style={'color': '#F0F8FF', 'font': '20px Arial', 'text-align': 'center'}),
+            html.H1("DASHBOARD", style={
+                'color': '#FFFFFF',
+                'text-shadow': '2px 2px #999999',
+                'font': '45px Arial Black',
+                'text-align': 'center'
+            }),
+            html.P("Data visualization for and with AI", style={
+                'color': '#F0F8FF',
+                'font': '20px Arial',
+                'text-align': 'center'
+            }),
         ],
-        style={'background-image': 'linear-gradient(to bottom, #00BFFF, #0000FF)', 'padding': '20px', 'border-radius': '10px', 'box-shadow': '0px 4px 8px rgba(0, 0, 0, 0.1)'}
+        style={
+            'background-image': 'linear-gradient(to bottom, #00BFFF, #0000FF)',
+            'padding': '20px',
+            'border-radius': '10px',
+            'box-shadow': '0px 4px 8px rgba(0, 0, 0, 0.1)'
+        }
     ),
+
+    # Dropdown Section
     dcc.Dropdown(
         id='layer-selection',
         options=[{'label': layer.name, 'value': layer.name} for layer in vgg_model.model.layers],
         value='activation_14',  # Default selected value
         style={'width': '50%', 'margin': 'auto', 'margin-top': '20px'}
     ),
-    dcc.Graph(id='scatter-plot', style={'background-color': '#ADD8E6', 'padding': '20px', 'border-radius': '10px', 'margin-top': '20px'}), 
-    html.P("Number of images displayed:", style={'color': '#000000', 'font': '15px Arial', 'text-align': 'left', 'margin-left': '20px'}),
-    dcc.Slider(id='input', min=0, max=len(data1[b'data']),step=500, value=500, marks={i: str(i) for i in range(0, len(data1[b'data']) + 1, 500)}),
-    html.P("Image:", style={'color': '#000000', 'font': '15px Arial', 'text-align': 'left', 'margin-left': '20px'}),
-    html.Div(id='image-container', style={'text-align': 'center', 'margin-top': '20px', 'background-color': '#ADD8E6', 'padding': '20px', 'border-radius': '10px', 'margin-top': '20px'}),
-    html.Button('Generate Explanation', id='generate-explanation-button'),  # Button to generate the explanation
-    
-    html.Div(id='explanation-container', style={'text-align': 'center', 'margin-top': '20px', 'background-color': '#ADD8E6', 'padding': '20px', 'border-radius': '10px', 'margin-top': '20px'})
+
+    # Scatter Plot Section
+    dcc.Graph(id='scatter-plot', style={
+        'background-color': '#ADD8E6',
+        'padding': '20px',
+        'border-radius': '10px',
+        'margin-top': '20px'
+    }),
+
+    # Number of Images Slider Section
+    html.P("Number of images displayed:", style={
+        'color': '#000000',
+        'font': '15px Arial',
+        'text-align': 'left',
+        'margin-left': '20px'
+    }),
+    dcc.Slider(
+        id='input',
+        min=0,
+        max=len(data1[b'data']),
+        step=100,
+        value=100,
+        marks={i: str(i) for i in range(0, len(data1[b'data']) + 1, 500)}
+    ),
+
+    # Image Display Section
+    html.P("Image:", style={
+        'color': '#000000',
+        'font': '15px Arial',
+        'text-align': 'left',
+        'margin-left': '20px'
+    }),
+    html.Div(
+        id='image-container',
+        style={
+            'text-align': 'center',
+            'margin-top': '20px',
+            'background-color': '#ADD8E6',
+            'padding': '20px',
+            'border-radius': '10px',
+            'margin-top': '20px'
+        }
+    ),
+
+    # Explanation Button Section
+    html.Button('Generate Explanation', id='generate-explanation-button'),
+
+    # Explanation Display Section
+    html.Div(
+        id='explanation-container',
+        style={
+            'text-align': 'center',
+            'margin-top': '20px',
+            'background-color': '#ADD8E6',
+            'padding': '20px',
+            'border-radius': '10px',
+            'margin-top': '20px'
+        }
+    )
 ])
+
 
 def predict_labels(images):
     return vgg_model.predict(images)
 
-
+# Callback to update the scatter plot based on user inputs
 @app.callback(
     Output('scatter-plot', 'figure'),
     Input('input', 'value'),
@@ -108,17 +181,25 @@ def update_scatter_plot(cut, layer_name):
     print(cut, layer_name)
 
     cut = int(cut)
+
+    if cut == 0:
+        return px.scatter()
+    
     rgb_images = data1[b'data'][:cut]
     predictions_match_cut = predictions_match[:cut]
     markers = ['circle' if match else 'cross' for match in predictions_match_cut]
 
+    # Preprocess the batch of images and obtain activations for the specified layer
     preprocessed_batch = preprocess_images(rgb_images, len(rgb_images))
     activations_batch = keract.get_activations(vgg_model.model, preprocessed_batch, layer_names=layer_name)
     
+    # Process activations for the current layer
     activations_batch_curr_layer = activations_batch[layer_name]
     n_samples = activations_batch_curr_layer.shape[0]
-
     activ_batch_reshaped = activations_batch_curr_layer.reshape(n_samples, -1)
+
+
+    # Apply PCA for dimensionality reduction
     pca = PCA(n_components=2)
     reduced = pca.fit_transform(activ_batch_reshaped)
 
@@ -185,6 +266,7 @@ def update_scatter_plot(cut, layer_name):
     )
     return fig
 
+# Utility function to convert a numpy array to base64
 def numpy_array_to_base64(arr):
     img = PIL.Image.fromarray(arr)
     buffered = io.BytesIO()
@@ -192,6 +274,7 @@ def numpy_array_to_base64(arr):
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
 
+# Callback to display an image on click
 @app.callback(
     Output('image-container', 'children'),
     [Input('scatter-plot', 'clickData')]
@@ -208,7 +291,8 @@ def display_image_on_click(clickData):
     resized_image = cv2.resize(clicked_image, dsize=(w*10, h*10), interpolation=cv2.INTER_CUBIC)
     image_base64 = numpy_array_to_base64(resized_image)
     return html.Img(src=f"data:image/png;base64, {image_base64}", style={'max-width': '100%', 'height': 'auto'})
-    
+
+# Callback to generate and display an explanation
 @app.callback(
     Output('explanation-container', 'children'),
     [Input('generate-explanation-button', 'n_clicks')],
