@@ -10,6 +10,8 @@ from skimage.segmentation import slic
 from PIL import Image
 import base64
 import io
+import torchvision.transforms as transforms
+
 
 def unpickle(file):
     """load dataset"""
@@ -18,6 +20,13 @@ def unpickle(file):
         dict = pickle.load(fo, encoding='bytes')
     return dict
 
+normalize = transforms.Normalize(mean=[0.5,0.5,0.5], std=[0.5,0.5,0.5])
+def normalize_image(image):
+    
+    """Normalize a single image using the defined transformation."""
+    transform = transforms.Compose([transforms.ToPILImage(), normalize, transforms.ToTensor()])
+    normalized_image = transform(image)
+    return np.asarray(normalized_image)
 
 def row2array(row):
     """transforms one row of a dataset into an array W * H * 3 array (so that it can be visualised using plt.imshow)"""

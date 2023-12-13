@@ -62,7 +62,7 @@ vgg_model = VGG.cifar10vgg(False)
 
 predictions = []
 preprocessed_batch = preprocess_images(rgb_images, len(rgb_images))
-pred_distributions = vgg_model.predict(preprocessed_batch)
+pred_distributions = vgg_model.predict(preprocessed_batch, normalize=False)
 pred_indices = np.argmax(pred_distributions, axis=1)
 pred_indices_reshaped = pred_indices.reshape(-1, 1).flatten()
 
